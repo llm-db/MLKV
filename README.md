@@ -8,6 +8,11 @@ pipelines.
 
 ![MLKV+ Dataflow](imgs/dataflow.svg)
 
+* What is GDS?
+GDS (GPUDirect Storage) enables direct data transfers between GPU memory and storage, bypassing the CPU to significantly accelerate I/O operations.
+As part of the NVIDIA CUDA Toolkit, GDS is supported on NVIDIA GPUs with Volta architecture or newer.
+For more details, refer to the [official documentation](https://docs.nvidia.com/gpudirect-storage/index.html).
+In MLKV+, we leverage GDS to optimize storage access performance.
 
 ## How to build MLKV+
 It will build the PyTorch extension and the libmlkvplus library.
@@ -69,7 +74,7 @@ We use [gYCSB](https://github.com/haiqiang-zhang/gYCSB) framework to benchmark M
 
 
 ## How to install GPUDirect Storage
-To be added
+Please refer to the [official documentation](https://docs.nvidia.com/gpudirect-storage/troubleshooting-guide/index.html) to install GPUDirect Storage.
 
 ## Known Issues
 
