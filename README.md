@@ -27,11 +27,16 @@ MAX_JOBS=$(($(nproc)-1)) CUDA_SM="86" pip install -e .
 
 
 ## Playground of MLKV+
-
+Warning: The playground is not perfect currently, it may raise CUDA errors in some cases.
 * You can run the single node playground by:
     ```bash
     python playground/mlkvp_playground.py
     ```
+* You can run the distributed playground by:
+    ```bash
+    torchrun --nproc_per_node=4 playground/dist_mlkvp_playground.py
+    ```
+    * Please change `--nproc_per_node` to your wanted number of GPUs.
 
 ## How to build libmlkvplus
 ```bash
