@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <nlohmann/json.hpp>
 
 #include "dummy_var.cuh"
 #include "storage_config.h"
@@ -16,53 +17,43 @@
 
 namespace mlkv_plus {
 
-// Factory function for creating DummyVar with type dispatch
+// Factory function for creating DummyVar from JSON config
 template<typename KeyType, typename ValueType>
-c10::IValue create_dummy_var(
-    int64_t dim,
-    int64_t max_hbm_for_vectors_gb,
-    bool hkv_io_by_cpu,
-    int64_t gpu_id,
-    bool create_if_missing,
-    int64_t gpu_init_capacity,
-    int64_t gpu_max_capacity,
-    int64_t max_batch_size,
-    std::string rocksdb_path,
+c10::IValue create_dummy_var_from_json(
+    std::string json_config,
     torch::Tensor ensure_device
     ) {
 
     // Ensure we're on a CUDA device
     TORCH_CHECK(torch::cuda::is_available(), "CUDA is required for creating DummyVar");
     
+    // Parse JSON to get gpu_id for device setting
+    int gpu_id = 0;
+    try {
+        nlohmann::json j = nlohmann::json::parse(json_config);
+        if (j.contains("gpu_id")) {
+            gpu_id = j["gpu_id"].get<int>();
+        }
+    } catch (const nlohmann::json::parse_error& e) {
+        throw std::runtime_error("Failed to parse JSON config for gpu_id: " + std::string(e.what()));
+    }
+    
     // Explicitly initialize CUDA context for the target device
     // This is crucial when PyTorch hasn't done any GPU operations yet
     cudaError_t err = cudaSetDevice(gpu_id);
     TORCH_CHECK(err == cudaSuccess, "Failed to set CUDA device: ", cudaGetErrorString(err));
 
-    // Create DummyVar using make_intrusive
-    auto dummy_var = c10::make_intrusive<mlkv_plus::DummyVar<KeyType, ValueType>>(
-        dim, max_hbm_for_vectors_gb, hkv_io_by_cpu, gpu_id, create_if_missing, gpu_init_capacity, gpu_max_capacity, max_batch_size, rocksdb_path);
-
-    cudaError_t after_create = cudaGetLastError();
-    if (after_create != cudaSuccess) {
-        throw std::runtime_error("CUDA error after DummyVar creation: " + std::string(cudaGetErrorString(after_create)));
-    }
+    // Create DummyVar using make_intrusive with JSON config
+    auto dummy_var = c10::make_intrusive<mlkv_plus::DummyVar<KeyType, ValueType>>(json_config);
 
     return c10::IValue(dummy_var);
 }
 
 // Add CPU fallback to redirect to CUDA implementation
 TORCH_LIBRARY_IMPL(libmlkvplus_torch, CatchAll, m) {
-    m.impl("create_dummy_var", [](
-        int64_t dim,
-        int64_t max_hbm_for_vectors_gb,
-        bool hkv_io_by_cpu,
-        int64_t gpu_id,
-        bool create_if_missing,
-        int64_t gpu_init_capacity,
-        int64_t gpu_max_capacity,
-        int64_t max_batch_size,
-        std::string rocksdb_path,
+    
+    m.impl("create_dummy_var_from_json", [](
+        std::string json_config,
         torch::Tensor ensure_device
         ) {
         
@@ -70,15 +61,14 @@ TORCH_LIBRARY_IMPL(libmlkvplus_torch, CatchAll, m) {
         TORCH_CHECK(torch::cuda::is_available(), "CUDA is required for creating DummyVar");
 
         // Call the CUDA implementation directly
-        return create_dummy_var<int64_t, float>(dim, max_hbm_for_vectors_gb, hkv_io_by_cpu, gpu_id, create_if_missing, gpu_init_capacity, gpu_max_capacity, 
-            max_batch_size, rocksdb_path, ensure_device);
+        return create_dummy_var_from_json<int64_t, float>(json_config, ensure_device);
     });
 }
 
 
 TORCH_LIBRARY_IMPL(libmlkvplus_torch, CUDA, m) {
     // Register CUDA implementations
-    m.impl("create_dummy_var", &create_dummy_var<int64_t, float>);
+    m.impl("create_dummy_var_from_json", &create_dummy_var_from_json<int64_t, float>);
 }
 
 

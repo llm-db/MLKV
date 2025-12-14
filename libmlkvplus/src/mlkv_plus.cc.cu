@@ -1,3 +1,4 @@
+#include "cuda_runtime_api.h"
 #include "mlkv_plus.cuh"
 #include <iostream>
 #include <sstream>
@@ -72,7 +73,7 @@ DB<Key, Value, Score>::~DB() {
 
 template<typename Key, typename Value, typename Score>
 OperationResult DB<Key, Value, Score>::initialize(cudaStream_t stream) {
-    std::lock_guard<std::mutex> lock(operation_mutex_);
+    // std::lock_guard<std::mutex> lock(operation_mutex_);
     
     if (initialized_) {
         return OperationResult::SUCCESS;
@@ -106,12 +107,24 @@ OperationResult DB<Key, Value, Score>::initialize(cudaStream_t stream) {
     if (memdisk_tree_result != OperationResult::SUCCESS) {
         return memdisk_tree_result;
     }
+
+    cudaError_t after_initialize = cudaGetLastError();
+    if (after_initialize != cudaSuccess) {
+      std::cerr << "CUDA error at the end of DB initialize: " << cudaGetErrorString(after_initialize) << std::endl;
+      return OperationResult::CUDA_ERROR;
+    }
     
     // initialize gpu tree
     gpu_tree_ = std::make_unique<GPUTreeHkv<Key, Value, Score>>(config_);
     auto gpu_tree_result = gpu_tree_->initialize(cuda_stream_);
     if (gpu_tree_result != OperationResult::SUCCESS) {
         return gpu_tree_result;
+    }
+
+    cudaError_t after_gpu_tree_initialize = cudaGetLastError();
+    if (after_gpu_tree_initialize != cudaSuccess) {
+      std::cerr << "CUDA error at the end of GPU tree initialize: " << cudaGetErrorString(after_gpu_tree_initialize) << std::endl;
+      return OperationResult::CUDA_ERROR;
     }
     
     initialized_ = true;

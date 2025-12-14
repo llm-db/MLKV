@@ -1,13 +1,19 @@
-import torch
+# torchrun --nproc_per_node=4 dist_mlkvp_playground.py
 
+import torch
+import os
 import mlkv_plus
 
+local_rank = int(os.environ.get("LOCAL_RANK", 0))
 
-# mlkv_plus.init(comm_tool="torch_dist")
 
-# keys = torch.tensor([1, 2, 3], dtype=torch.int64, device=torch.device('cuda', torch.cuda.current_device()))
+torch.cuda.set_device(local_rank)
 
-# values = torch.tensor([[11,12,13,14,15], [21,22,23,24,25], [31,32,33,34,35]], dtype=torch.float32, device=torch.device('cuda', torch.cuda.current_device()))
+mlkv_plus.init(comm_tool="torch_dist")
+
+keys = torch.tensor([1, 2, 3], dtype=torch.int64, device=torch.device('cuda', torch.cuda.current_device()))
+
+values = torch.tensor([[11,12,13,14,15], [21,22,23,24,25], [31,32,33,34,35]], dtype=torch.float32, device=torch.device('cuda', torch.cuda.current_device()))
 
 db = mlkv_plus.MLKVPlusDB(
     dim=15,
@@ -16,7 +22,12 @@ db = mlkv_plus.MLKVPlusDB(
     gpu_init_capacity=100000,
     gpu_max_capacity=500000,
     max_batch_size=10000,
-    hkv_io_by_cpu=False
+    hkv_io_by_cpu=False,
+    enable_gds_log=False,
+    enable_gds_get_from_sst=False,
+    disableWAL=True,
+    force_skip_memtable=True,
+    rocksdb_use_direct_reads=True
 )
 
 # db.initialize()

@@ -34,4 +34,4 @@ bindings:
         disableWAL: false
         rocksdb_path: ./mlkv_plus_rocksdb
         force_skip_memtable: false
-        rocksdb_use_direct_reads: true
+        rocksdb_use_direct_reads: false

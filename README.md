@@ -9,7 +9,8 @@ pipelines.
 ![MLKV+ Dataflow](imgs/dataflow.svg)
 
 
-## How to build MLKV+ (PyTorch + libmlkvplus)
+## How to build MLKV+
+It will build the PyTorch extension and the libmlkvplus library.
 ```bash
 # clone submodule
 git submodule update --init --recursive
@@ -23,6 +24,14 @@ MAX_JOBS=$(($(nproc)-1)) CUDA_SM="86" pip install -e .
 ```
 * Please change `CUDA_SM` to your own [Computer Compacity](https://developer.nvidia.com/cuda-gpus) of GPU.
 * You can change `MAX_JOBS` to your wanted number of jobs to compile.
+
+
+## Playground of MLKV+
+
+* You can run the single node playground by:
+    ```bash
+    python playground/mlkvp_playground.py
+    ```
 
 ## How to build libmlkvplus
 ```bash
@@ -43,7 +52,7 @@ cmake .. -Dsm=86 && make -j$(($(nproc)-1)) && cmake --install . --component gycs
 
 We use [gYCSB](https://github.com/haiqiang-zhang/gYCSB) framework to benchmark MLKV+ performance.
 * Please ensure that you already clone the submodule of gYCSB and build libmlkvplus or MLKV+ (PyTorch + libmlkvplus).
-* Installing gYCSB by:
+* Installing gYCSB in the root directory by:
     ```bash
     pip install -e ./gYCSB
     ```
@@ -57,7 +66,18 @@ We use [gYCSB](https://github.com/haiqiang-zhang/gYCSB) framework to benchmark M
 ## How to install GPUDirect Storage
 To be added
 
-## Known issues
-* The G-Page Cache might raise IO errors, like: "Failed to get from SST files: IO error: GDS read failed: Incomplete GDS read: requested 262144 bytes (aligned), got 262144 bytes at offset 10223616, need at least 265268 bytes for requested range" in Get operation.
+## Known Issues
 
-* The Multiget logic is not perfect.
+- [ ] **G-Page Cache IO Errors**: The G-Page Cache may encounter IO errors during `Get` operations, such as:
+  ```
+  Failed to get from SST files: IO error: GDS read failed: Incomplete GDS read: 
+  requested 262144 bytes (aligned), got 262144 bytes at offset 10223616, 
+  need at least 265268 bytes for requested range
+  ```
+
+- [ ] **MultiGet Operation**: The `MultiGet` logic has known limitations and maybe degrade the performance at some special cases.
+
+- [ ] **PyTorch Binding**: The PyTorch binding may occasionally raise CUDA errors:
+  ```
+  torch.AcceleratorError: CUDA error: __global__ function call is not configured
+  ```

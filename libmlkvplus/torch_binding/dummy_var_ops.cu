@@ -1,22 +1,7 @@
-/*
- * Copyright (c) 2022, NVIDIA CORPORATION.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #include <c10/cuda/CUDAStream.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <ATen/cuda/CUDAContext.h>
+#include <cuda_runtime.h>
 
 #include <memory>
 #include <string>
@@ -36,6 +21,9 @@ using KeyType = int64_t;
 using ValueType = float;
 
 bool assign(c10::intrusive_ptr<mlkv_plus::DummyVar<KeyType, ValueType>> dummy_var, torch::Tensor indices, torch::Tensor values) {
+    // Clear any pending CUDA errors before starting
+    cudaGetLastError();
+    
     // Validate input parameters
     TORCH_CHECK(values.device().type() == torch::kCUDA, 
                "values must be on CUDA device for mlkv_plus operations, got ", values.device());
@@ -51,6 +39,17 @@ bool assign(c10::intrusive_ptr<mlkv_plus::DummyVar<KeyType, ValueType>> dummy_va
     // Call the Assign method directly on the custom class object
     dummy_var->Assign(indices.data_ptr<KeyType>(), values.data_ptr<ValueType>(), N);
     
+    // Synchronize device to ensure all operations complete
+    cudaError_t sync_err = cudaDeviceSynchronize();
+    
+    // Get and clear any CUDA errors that occurred during the operation
+    cudaError_t last_err = cudaGetLastError();
+    
+    TORCH_CHECK(sync_err == cudaSuccess, 
+                "CUDA sync error after assign: ", cudaGetErrorString(sync_err));
+    TORCH_CHECK(last_err == cudaSuccess, 
+                "CUDA error after assign: ", cudaGetErrorString(last_err));
+    
     return true;
 }
 
@@ -59,6 +58,8 @@ bool assign(c10::intrusive_ptr<mlkv_plus::DummyVar<KeyType, ValueType>> dummy_va
 
 torch::Tensor read(c10::intrusive_ptr<mlkv_plus::DummyVar<KeyType, ValueType>> dummy_var, torch::Tensor indices) {
 
+    // Clear any pending CUDA errors before starting
+    cudaGetLastError();
 
     // check if the indices is on CUDA
     if (indices.device().type() == torch::kCPU) {
@@ -86,6 +87,17 @@ torch::Tensor read(c10::intrusive_ptr<mlkv_plus::DummyVar<KeyType, ValueType>> d
 
     // Call the SparseRead method directly on the custom class object
     dummy_var->Read(indices.data_ptr<KeyType>(), output.data_ptr(), found.data_ptr<bool>(), N);
+    
+    // Synchronize device to ensure all operations complete before returning
+    cudaError_t sync_err = cudaDeviceSynchronize();
+    
+    // Get and clear any CUDA errors that occurred during the operation
+    cudaError_t last_err = cudaGetLastError();
+    
+    TORCH_CHECK(sync_err == cudaSuccess, 
+                "CUDA sync error after read: ", cudaGetErrorString(sync_err));
+    TORCH_CHECK(last_err == cudaSuccess, 
+                "CUDA error after read: ", cudaGetErrorString(last_err));
     
     return output;
 }
