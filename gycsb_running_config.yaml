@@ -1,0 +1,37 @@
+warmup_runs: 0
+num_records: 1_000_000
+scan_size: 100
+distribution: "uniform"
+zipfian_theta: 0.99
+orderedinserts: true
+data_integrity: true
+results_folder: "gycsb_results"
+load_data_output_file: null
+operations_file: null
+ops: 500
+target_qps: 0
+min_field_length: 10
+max_field_length: 10
+field_count: 16
+key_type: "np_int64"
+operation_sets:
+    Multi_Get_65536:
+        multiget: [1, 65536, 0]
+    Multi_Get_131072:
+        multiget: [1, 131072, 0]
+    Multi_Get_262144:
+        multiget: [1, 262144, 0]
+    
+bindings:
+    mlkv_plus:
+        value_type: "double"
+        gpu_init_capacity: 300_000
+        gpu_max_capacity:  300_000
+        hbm_gb: 5
+        gpu_ids: [0]
+        enable_gds_log: false
+        enable_gds_get_from_sst: true
+        disableWAL: false
+        rocksdb_path: ./mlkv_plus_rocksdb
+        force_skip_memtable: false
+        rocksdb_use_direct_reads: true

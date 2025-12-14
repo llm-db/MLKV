@@ -1,0 +1,16 @@
+target/
+.venv/
+venv/
+__pycache__/
+cuDFBenchmarkResult.json
+nohup.out
+cufile.log
+tmp/
+build/
+dist/
+.vscode/
+.cursor/
+*.egg-info/
+*.so
+.cache/
+.clangd
