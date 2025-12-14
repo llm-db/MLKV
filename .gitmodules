@@ -1,0 +1,10 @@
+[submodule "third_party/rocksdb"]
+	path = third_party/rocksdb
+	url = https://github.com/facebook/rocksdb.git
+	branch = 10.7.fb
+[submodule "third_party/HierarchicalKV"]
+	path = third_party/HierarchicalKV
+	url = https://github.com/NVIDIA-Merlin/HierarchicalKV.git
+[submodule "gYCSB"]
+	path = gYCSB
+	url = https://github.com/haiqiang-zhang/gYCSB.git
