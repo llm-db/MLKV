@@ -108,6 +108,8 @@ OperationResult DB<Key, Value, Score>::initialize(cudaStream_t stream) {
         return memdisk_tree_result;
     }
 
+    MLKV_CUDA_CHECK(cudaDeviceSynchronize());
+
     cudaError_t after_initialize = cudaGetLastError();
     if (after_initialize != cudaSuccess) {
       std::cerr << "CUDA error at the end of DB initialize: " << cudaGetErrorString(after_initialize) << std::endl;
@@ -121,12 +123,14 @@ OperationResult DB<Key, Value, Score>::initialize(cudaStream_t stream) {
         return gpu_tree_result;
     }
 
+    MLKV_CUDA_CHECK(cudaDeviceSynchronize());
+
     cudaError_t after_gpu_tree_initialize = cudaGetLastError();
     if (after_gpu_tree_initialize != cudaSuccess) {
       std::cerr << "CUDA error at the end of GPU tree initialize: " << cudaGetErrorString(after_gpu_tree_initialize) << std::endl;
       return OperationResult::CUDA_ERROR;
     }
-    
+
     initialized_ = true;
 
 

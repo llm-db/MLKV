@@ -58,6 +58,12 @@ cmake .. -Dsm=86 && make -j$(($(nproc)-1)) && cmake --install . --component gycs
 ```
 * Please change `-Dsm` to your own [Computer Compacity](https://developer.nvidia.com/cuda-gpus) of GPU.
 
+## Playground of libmlkvplus
+* You can run the simple example by:
+    ```bash
+    ./test/mlkv_plus_simple_example
+    ```
+
 ## Benchmark
 
 We use [gYCSB](https://github.com/haiqiang-zhang/gYCSB) framework to benchmark MLKV+ performance.
