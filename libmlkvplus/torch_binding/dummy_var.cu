@@ -128,6 +128,11 @@ DummyVar<KeyType, ValueType>::DummyVar(std::string json_config):
     throw std::runtime_error("Failed to initialize DummyVar: " + std::to_string(static_cast<int>(result)));
   }
 
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    throw std::runtime_error("CUDA error after initialize: " + std::string(cudaGetErrorString(err)));
+  }
+
 }
 
 template <typename KeyType, typename ValueType>
